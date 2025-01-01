@@ -1,13 +1,13 @@
-# myorm_MySQL
+# myorm_mysql
 
-myorm_MySQL is a ORM writen with TypeScript with sintax similar with MyORMForPostgreSQL of .NET
+myorm_mysql is a ORM writen with TypeScript with sintax similar with MyORMForMySQL of .NET
 
 ## Installation
 
 
 
 ```bash
-npm install myorm_MySQL
+npm install myorm_mysql
 ```
 Enable decorators on tsconfig.json
 ```json
@@ -23,7 +23,7 @@ This ORM is based on https://www.nuget.org/packages/Adr.MyORMForMySQL for .NET. 
 ### Context.ts
 
 ```typescript
-import { MySQLDBManager, MySQLDBContext, MySQLDBSet} from 'myorm_MySQL';
+import { MySQLDBManager, MySQLDBContext, MySQLDBSet} from 'myorm_mysql';
 import { Message } from './entities/Message'; 
 import { Person } from './entities/Person';
 
