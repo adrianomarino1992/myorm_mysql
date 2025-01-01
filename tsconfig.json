@@ -104,7 +104,7 @@
     "jest.config.ts",     
     "coverage", 
     "./lib/**/*",  
-    //"./__tests__/**/*",     
+    "./__tests__/**/*",     
     "./__tests__/**/*.spec.ts"  
   ]
 }

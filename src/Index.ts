@@ -30,10 +30,10 @@ export {TypeNotSuportedException};
 
 
 export {DBTypes};
-export {MySQLDBConnection as PGDBConnection}
+export {MySQLDBConnection}
 export {MySQLContext}
 export {MySQLManager}
-export {MySQLDBSet as PGDBSet}
+export {MySQLDBSet}
 
 export function Column(name? : string)
 {
