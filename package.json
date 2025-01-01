@@ -1,5 +1,5 @@
 {
-  "name": "myorm_MySQL",
+  "name": "myorm_mysql",
   "version": "9.1.2",
   "description": "A ORM writen in typescript for MySQL",
   "main": "./lib/Index.js",
