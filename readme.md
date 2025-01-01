@@ -461,7 +461,7 @@ let persons = await context.Persons.WhereField("MessagesReceived").IsNull().ToLi
 ### ./entities/Person.ts
 
 ```typescript
-import { Table, Column, PrimaryKey, DataType, OneToMany, OneToOne, ManyToMany, DBTypes} from 'myorm_MySQL';
+import { Table, Column, PrimaryKey, DataType, OneToMany, OneToOne, ManyToMany, DBTypes} from 'myorm_mysql';
 import { Message } from './Message';
 
 @Table("person_tb")
@@ -531,7 +531,7 @@ export class Person
 ### ./entities/Message.ts
 
 ```typescript
-import { Table, Column, PrimaryKey, DataType, ManyToOne, ManyToMany, DBTypes} from 'myorm_MySQL';
+import { Table, Column, PrimaryKey, DataType, ManyToOne, ManyToMany, DBTypes} from 'myorm_mysql';
 import { Person } from './Person';
 
 @Table("message_tb")
