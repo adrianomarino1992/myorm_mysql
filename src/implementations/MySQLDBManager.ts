@@ -4,7 +4,7 @@ import {AbstractManager} from 'myorm_core';
 import 'reflect-metadata';
 import TypeNotSuportedException from '../core/exceptions/TypeNotSuportedException';
 import Type from '../core/design/Type';
-import MySQLDBConnection from './MySQLConnection';
+import MySQLDBConnection from './MySQLDBConnection';
 import SchemasDecorators from '../core/decorators/SchemasDecorators';
 import InvalidOperationException from '../core/exceptions/InvalidOperationException';
 import { DBTypes } from '../Index';
@@ -12,7 +12,7 @@ import { RelationType } from '../core/enums/RelationType';
 import {DBOperationLogHandler, LogType} from 'myorm_core'; 
 
 
-export default class MySQLManager extends AbstractManager
+export default class MySQLDBManager extends AbstractManager
 {
     
     private _connection! : MySQLDBConnection;   
@@ -333,9 +333,9 @@ export default class MySQLManager extends AbstractManager
         });
     }
 
-    public static Build(host : string, port : number, dababase : string, user : string, pass : string) : MySQLManager
+    public static Build(host : string, port : number, dababase : string, user : string, pass : string) : MySQLDBManager
     {
-        return new MySQLManager(new MySQLDBConnection(host, port, dababase, user, pass));
+        return new MySQLDBManager(new MySQLDBConnection(host, port, dababase, user, pass));
     }
 
     public static BuildFromEnviroment()
@@ -365,7 +365,7 @@ export default class MySQLManager extends AbstractManager
         if(!database)
             throw new InvalidOperationException(`DB_NAME enviroment variable was no value`);
 
-        return MySQLManager.Build(host, intPort, database, username, password)
+        return MySQLDBManager.Build(host, intPort, database, username, password)
     }
     
     private CreatePromisse<T>(func : ()=> Promise<T>) : Promise<T>

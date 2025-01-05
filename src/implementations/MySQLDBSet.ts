@@ -4,10 +4,10 @@ import {IStatement, Operation, IDBSet, IFluentField, AbstractSet} from "myorm_co
 import Type from "../core/design/Type";
 import { DBTypes } from "../core/enums/DBTypes";
 import SchemasDecorators from "../core/decorators/SchemasDecorators";
-import MySQLManager from "./MySQLManager";
+import MySQLDBManager from "./MySQLDBManager";
 import NotImpletedException from "../core/exceptions/NotImplementedException";
 import TypeNotSuportedException from "../core/exceptions/TypeNotSuportedException";
-import MySQLContext from "./MySQLContext";
+import MySQLDBContext from "./MySQLDBContext";
 import InvalidOperationException from "../core/exceptions/InvalidOperationException";
 import { RelationType } from "../core/enums/RelationType";
 import ConstraintFailException from "../core/exceptions/ConstraintFailException";
@@ -24,8 +24,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     private _type! : {new (...args : any[]) : T};    
     private _table! : string;
     private _maps! : ReturnType<typeof Type.GetColumnNameAndType>;
-    private _manager! : MySQLManager;
-    private _context! : MySQLContext;
+    private _manager! : MySQLDBManager;
+    private _context! : MySQLDBContext;
     private _statements : IMySQLStatement[] = [];
     private _ordering : IMySQLOrdenation<T>[] = [];
     private _includes: IMySQLIncluding<T>[] = []
@@ -36,7 +36,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     private _untrackeds : boolean;
     private _selectedsFields : string[] = [];
 
-    constructor(cTor : { new(...args : any[]) : T}, context : MySQLContext)
+    constructor(cTor : { new(...args : any[]) : T}, context : MySQLDBContext)
     {
         super();
         this._type = cTor;

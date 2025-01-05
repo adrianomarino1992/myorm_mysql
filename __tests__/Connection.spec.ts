@@ -1,6 +1,6 @@
-import { MySQLManager } from "../src/Index";
+import { MySQLDBManager } from "../src/Index";
 import InvalidOperationException from "../src/core/exceptions/InvalidOperationException";
-import MySQLConnection from "../src/implementations/MySQLConnection";
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 import Context from "./classes/TestContext";
 
 describe("Connection", ()=>{
@@ -8,7 +8,7 @@ describe("Connection", ()=>{
 
     test("Test open and close connection", async ()=>{
 
-        var conn = new MySQLConnection("localhost", 3306, "mydb", "root", "root");
+        var conn = new MySQLDBConnection("localhost", 3306, "mydb", "root", "root");
 
         expect(conn).not.toBe(null);
 
@@ -28,7 +28,7 @@ describe("Connection", ()=>{
       process.env.DB_PASS = "root";
       process.env.DB_NAME = "mydb";
 
-      let context = new Context(MySQLManager.BuildFromEnviroment());
+      let context = new Context(MySQLDBManager.BuildFromEnviroment());
 
       let now = await context.ExecuteQuery("select now()");
 
@@ -48,7 +48,7 @@ describe("Connection", ()=>{
 
             try
             {
-                let context = new Context(MySQLManager.BuildFromEnviroment());  
+                let context = new Context(MySQLDBManager.BuildFromEnviroment());  
 
                 throw new Error("Shouyld have failed");
 

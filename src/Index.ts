@@ -1,8 +1,8 @@
 import { DBTypes } from "./core/enums/DBTypes";
 import SchemasDecorators from "./core/decorators/SchemasDecorators";
-import MySQLDBConnection from "./implementations/MySQLConnection";
-import MySQLContext from "./implementations/MySQLContext";
-import MySQLManager from "./implementations/MySQLManager";
+import MySQLDBConnection from "./implementations/MySQLDBConnection";
+import MySQLDBContext from "./implementations/MySQLDBContext";
+import MySQLDBManager from "./implementations/MySQLDBManager";
 import MySQLDBSet from "./implementations/MySQLDBSet";
 
 import QueryFailException from "./core/exceptions/QueryFailException";
@@ -31,8 +31,8 @@ export {TypeNotSuportedException};
 
 export {DBTypes};
 export {MySQLDBConnection}
-export {MySQLContext}
-export {MySQLManager}
+export {MySQLDBContext}
+export {MySQLDBManager}
 export {MySQLDBSet}
 
 export function Column(name? : string)

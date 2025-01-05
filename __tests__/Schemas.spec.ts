@@ -2,8 +2,8 @@
 
 import { TryAsync, CreateConnection } from "./functions/TestFunctions";
 import Type from "../src/core/design/Type";
-import PGConnection from "../src/implementations/MySQLConnection";
-import MySQLManager from "../src/implementations/MySQLManager";
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
+import MySQLDBManager from "../src/implementations/MySQLDBManager";
 import Context from "./classes/TestContext";
 import {Person} from './classes/TestEntity';
 
@@ -16,7 +16,7 @@ describe("Types and metadata", ()=>{
 
         var conn = CreateConnection();
 
-        var manager = new MySQLManager(conn);
+        var manager = new MySQLDBManager(conn);
 
         let postgres = await manager.CheckDatabaseAsync('postgres');
         let mysql = await manager.CheckDatabaseAsync('mysql');
@@ -31,7 +31,7 @@ describe("Types and metadata", ()=>{
 
         var conn = CreateConnection();
 
-        var manager = new MySQLManager(conn);
+        var manager = new MySQLDBManager(conn);
 
         let test_db = await manager.CheckDatabaseAsync('test_db');
 
@@ -58,7 +58,7 @@ describe("Types and metadata", ()=>{
     
             var conn = CreateConnection();
     
-            var manager = new MySQLManager(conn);
+            var manager = new MySQLDBManager(conn);
     
             let test_table = await manager.CheckTableAsync(Person);
     
@@ -85,7 +85,7 @@ describe("Types and metadata", ()=>{
     
                 var conn = CreateConnection();
 
-                var manager = new MySQLManager(conn);
+                var manager = new MySQLDBManager(conn);
         
                 let table = await manager.CheckColumnAsync(Person, 'Name');
                
@@ -98,7 +98,7 @@ describe("Types and metadata", ()=>{
         
                 var conn = CreateConnection();
         
-                var manager = new MySQLManager(conn);
+                var manager = new MySQLDBManager(conn);
         
                 let test_column = await manager.CheckColumnAsync(Person, 'Name');
         
@@ -122,7 +122,7 @@ describe("Types and metadata", ()=>{
         
                 var conn = CreateConnection();
         
-                var manager = new MySQLManager(conn);
+                var manager = new MySQLDBManager(conn);
         
                 let test_column = await manager.CheckColumnAsync(Person, 'Name');
         
@@ -160,7 +160,7 @@ describe("Types and metadata", ()=>{
 
                     var conn = CreateConnection();
         
-                    var manager = new MySQLManager(conn);                   
+                    var manager = new MySQLDBManager(conn);                   
             
                     var context = new Context(manager);  
 
@@ -198,7 +198,7 @@ describe("Types and metadata", ()=>{
         
                 var conn = CreateConnection();
         
-                var manager = new MySQLManager(conn);
+                var manager = new MySQLDBManager(conn);
         
                 let test_column = await manager.CheckColumnAsync(Person, 'Name');
         
@@ -226,7 +226,7 @@ describe("Types and metadata", ()=>{
         
                 var conn = CreateConnection();
         
-                var manager = new MySQLManager(conn);
+                var manager = new MySQLDBManager(conn);
         
                 let test_column = await manager.CheckColumnAsync(Person, 'CEP');
         

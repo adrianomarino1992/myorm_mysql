@@ -6,7 +6,7 @@ import Type from "../core/design/Type";
 import ConstraintFailException from "../core/exceptions/ConstraintFailException";
 import InvalidOperationException from "../core/exceptions/InvalidOperationException";
 import TypeNotMappedException from "../core/exceptions/TypeNotMappedException";
-import MySQLManager from "./MySQLManager";
+import MySQLDBManager from "./MySQLDBManager";
 import MySQLDBSet from "./MySQLDBSet";
 import MySQLSetHelper from "./MySQLSetHelper";
 import { DBTypes } from "../Index";
@@ -14,13 +14,13 @@ import { IJoining } from "myorm_core/lib/objects/interfaces/IDBContext";
 import {DBOperationLogHandler, LogType} from 'myorm_core'; 
 
 
-export default abstract class MySQLContext extends AbstractContext
+export default abstract class MySQLDBContext extends AbstractContext
 {
-    protected _manager:MySQLManager;    
+    protected _manager:MySQLDBManager;    
 
     private _mappedTypes! : {new (...args: any[]) : unknown}[];
 
-    constructor(manager : MySQLManager)
+    constructor(manager : MySQLDBManager)
     {
         super();
         this._manager = manager;  
@@ -139,12 +139,12 @@ export class Joining implements IJoining
 export class JoiningQuery implements IJoiningQuery
 {
 
-    private _context : MySQLContext;
+    private _context : MySQLDBContext;
     private _stack : IUnion[] = [];
     private _onStatements : IJoinMap[] = [];
     
 
-    constructor(context : MySQLContext, arg :  (new (...args: any[]) => Object))
+    constructor(context : MySQLDBContext, arg :  (new (...args: any[]) => Object))
     {
         this._context = context;
         this._stack.push({Type: arg, Join: Join.FROM});
@@ -229,13 +229,13 @@ export class JoiningQuery implements IJoiningQuery
 
 export class JoinSelectable<T extends Object> implements IJoinSelectable<T>
 {
-    private _context : MySQLContext;
+    private _context : MySQLDBContext;
     private _stack : IUnion[] = [];
     private _onStatements : IJoinMap[] = [];  
     private _type : new (...args: any[]) => T;
 
 
-    constructor(cT : new (...args: any[]) => T,  context : MySQLContext, stack : IUnion[], onStack : IJoinMap[])
+    constructor(cT : new (...args: any[]) => T,  context : MySQLDBContext, stack : IUnion[], onStack : IJoinMap[])
     {
         this._type = cT;
         this._context = context;

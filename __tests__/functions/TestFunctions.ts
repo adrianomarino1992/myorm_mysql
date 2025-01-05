@@ -1,6 +1,6 @@
-import MySQLConnection from "../../src/implementations/MySQLConnection";
+import MySQLDBConnection from "../../src/implementations/MySQLDBConnection";
 import Context from "../classes/TestContext";
-import MySQLManager from "../../src/implementations/MySQLManager";
+import MySQLDBManager from "../../src/implementations/MySQLDBManager";
 import { Person } from "../classes/TestEntity";
 import Type from "../../src/core/design/Type";
 import { Message } from "../classes/RelationEntity";
@@ -25,11 +25,11 @@ export async function TryAsync(
 }
 
 export function CreateConnection() {
-  return new MySQLConnection("localhost", 3306, "mydb", "root", "root");
+  return new MySQLDBConnection("localhost", 3306, "mydb", "root", "root");
 }
 
 export function CreateContext(): Context {
-  return new Context(new MySQLManager(CreateConnection()));
+  return new Context(new MySQLDBManager(CreateConnection()));
 }
 
 
