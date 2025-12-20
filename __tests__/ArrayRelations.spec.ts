@@ -2,6 +2,7 @@
 import { Person } from './classes/TestEntity';
 import {CreateContext, TruncateTablesAsync} from './functions/TestFunctions';
 import { Message } from './classes/RelationEntity';
+import { Operation } from 'myorm_core/lib/objects/interfaces/IStatement';
 
 
 
@@ -211,6 +212,61 @@ describe("Context", ()=>{
         expect(personAfter?.MessagesWriten?.length).toBe(1);
         expect(personAfter?.Message).toBeUndefined();
         
+
+    },100000);
+
+
+
+    test("Testing search by empty arrays", async ()=>{
+       
+        var context = CreateContext();
+
+        await context.Messages.AddAsync(new Message("With elements", 
+            new Person("Adriano", "adriano@test.com"), 
+            [
+                new Person("Camila", "camila@test.com"), 
+                new Person("Juliana", "juliana@test.com"), 
+                new Person("Andre", "andre@test.com")
+
+            ]
+            ));
+
+             await context.Messages.AddAsync(new Message("Empty array", 
+            new Person("Adriano", "adriano@test.com"), 
+            [
+            
+            ]
+            ));
+
+
+              await context.Messages.AddAsync(new Message("undefined", 
+            new Person("Adriano", "adriano@test.com"), 
+           undefined
+            ));
+
+
+            let undef = await context.Messages.Where({
+                Field: 'To', 
+                Value : undefined
+            }).ToListAsync();
+
+5
+            expect(undef.length).toBe(1);
+            expect(undef[0]).not.toBeUndefined();
+            expect(undef[0].Message).toBe("undefined");
+
+
+
+            let empty = await context.Messages.Where({
+                Field: 'To', 
+                Value : []
+            }).ToListAsync();
+
+
+            expect(empty.length).toBe(1);
+            expect(empty[0]).not.toBeUndefined();
+            expect(empty[0].Message).toBe("Empty array");
+       
 
     },100000);
 

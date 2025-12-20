@@ -250,6 +250,7 @@ describe("Context", ()=>{
                                .Where(Person, {Field: 'Name', Value : "adriano"})
                                .Select(Message)
                                .OrderDescendingBy("Message")
+                               .Limit(100)
                                .Offset(1)
                                .ToListAsync();
 

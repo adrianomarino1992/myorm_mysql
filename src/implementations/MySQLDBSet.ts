@@ -20,7 +20,6 @@ import StringUtils from "../core/utils/StringUtils";
 
 export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
 {   
-    private readonly DEFAULT_LIMIT = 9999;
     private _type! : {new (...args : any[]) : T};    
     private _table! : string;
     private _maps! : ReturnType<typeof Type.GetColumnNameAndType>;
@@ -29,7 +28,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     private _statements : IMySQLStatement[] = [];
     private _ordering : IMySQLOrdenation<T>[] = [];
     private _includes: IMySQLIncluding<T>[] = []
-    private _limit : IMySQLLimiter;
+    private _limit : IMySQLLimiter | undefined;
     private _offset? : IMySQLOffset;
     private _set : MySQLSetValue<T>;
     private _whereAsString? : string;
@@ -46,7 +45,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
         this._context = context;
         this._set = new MySQLSetValue<T>();
         this._untrackeds = false;
-        this._limit = {Limit : this.DEFAULT_LIMIT};
+        this._limit = undefined;
     }
        
 
@@ -1514,7 +1513,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
 
     public Limit(limit : number): AbstractSet<T> {
 
-        this._limit = limit >= 1 ? { Limit : limit} : {Limit : this.DEFAULT_LIMIT}; 
+        this._limit = limit >= 1 ? { Limit : limit} : undefined; 
         return this;
     }  
 
@@ -1678,12 +1677,19 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
             }
                         
             
-            query += ` limit ${this._limit.Limit}`;
+            if(this._limit && this._limit.Limit > 0)
+                query += ` limit ${this._limit.Limit}`;
             
 
-            if(this._offset != undefined)
+            if(this._offset != undefined && this._offset.OffSet > 0)
             {
                 query += ` offset ${this._offset.OffSet}`;
+            }
+
+            if(this._offset != undefined && this._offset.OffSet > 0)
+            {
+                 if(!this._limit || this._limit.Limit <= 0)
+                    throw new InvalidOperationException("Can not execute a Offset operation without Limit. Use Limit method too");
             }
 
             var r = await this._manager.ExecuteAsync(query);
@@ -1960,8 +1966,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
 
             if(isArray)
             {
-                if(pgStatement.Statement.Value.lenght == 0)
-                    return `coalesce(JSON_LENGTH(\`${this._table}\`.\`${column}\`, 1), 0) = 0`;
+                if(pgStatement.Statement.Value.length == 0)
+                    return `(\`${this._table}\`.\`${column}\` is not null and coalesce(JSON_LENGTH(\`${this._table}\`.\`${column}\`), 0) = 0)`;
 
                 if((pgStatement.Statement.Value as any[]).filter(s => s == undefined || s == null).length > 0)
                     throw new InvalidOperationException(`Can not compare relations with null or undefined objets`);
@@ -2108,7 +2114,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     {       
         this._ordering = [];
         this._includes = [];
-        this._limit = {Limit : this.DEFAULT_LIMIT};  
+        this._limit = undefined;  
         this._set = new MySQLSetValue<T>();    
         this._untrackeds = false; 
         this._selectedsFields = [];

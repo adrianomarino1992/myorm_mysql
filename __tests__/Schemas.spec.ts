@@ -6,7 +6,9 @@ import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 import MySQLDBManager from "../src/implementations/MySQLDBManager";
 import Context from "./classes/TestContext";
 import {Person} from './classes/TestEntity';
-
+import ErrorContext from "./classes/ErrorContext";
+import EntityWithNoKey from './classes/EntityWithNoKey';
+import { ConstraintFailException } from "../src/Index";
 
 
 describe("Types and metadata", ()=>{
@@ -74,6 +76,30 @@ describe("Types and metadata", ()=>{
             test_table = await manager.CheckTableAsync(Person);
     
             expect(test_table).toBeTruthy();        
+    
+        });
+
+         test("Testing erro while creating a table with no primary key ", async ()=>{
+    
+            var conn = CreateConnection();
+    
+            var manager = new MySQLDBManager(conn);
+    
+           var errorContext = new ErrorContext(manager);
+    
+            try {
+
+                await errorContext.UpdateDatabaseAsync();
+                fail("Should not create the table");
+
+            } catch (err) {
+              
+                expect(err instanceof ConstraintFailException).toBeTruthy();
+            }
+           
+            let test_table = await manager.CheckTableAsync(EntityWithNoKey);
+    
+            expect(test_table).toBeFalsy();        
     
         });
 

@@ -7,3 +7,8 @@ export abstract class Entity {
     @DataType(DBTypes.AUTO_INCREMENT)
     public Id: number = -1;
 }
+
+
+
+
+
