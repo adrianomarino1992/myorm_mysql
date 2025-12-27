@@ -2029,7 +2029,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                 return `JSON_CONTAINS(${this.CreateValueStatement(typeName as DBTypes, pgStatement.Statement.Value)}, CAST(\`${this._table}\`.\`${column}\` AS JSON) )`; 
             }
 
-            if([Operation.STARTWITH, Operation.CONSTAINS, Operation.ENDWITH, Operation.GREATHER, Operation.GREATHEROREQUALS].includes(pgStatement.Statement.Kind))
+            if([Operation.STARTWITH, Operation.CONTAINS, Operation.ENDWITH, Operation.GREATHER, Operation.GREATHEROREQUALS].includes(pgStatement.Statement.Kind))
             {
                 return `JSON_CONTAINS(\`${this._table}\`.\`${column}\`, ${this.CreateValueStatement(typeName as DBTypes, pgStatement.Statement.Value)})`; 
             }           
@@ -2061,7 +2061,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                     }
             }
 
-            if([Operation.CONSTAINS, Operation.ENDWITH, Operation.STARTWITH].filter(s => s == pgStatement.Statement.Kind).length > 0)
+            if([Operation.CONTAINS, Operation.ENDWITH, Operation.STARTWITH].filter(s => s == pgStatement.Statement.Kind).length > 0)
             {
                throw new InvalidOperationException(`Can execute ${pgStatement.Statement.Kind.toString().toLocaleLowerCase()} only with text and array fields`);
             }        
@@ -2098,7 +2098,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
         switch(operation)
         {
             case Operation.EQUALS : return ["=", "", ""];
-            case Operation.CONSTAINS : return ["like", "%", "%"];
+            case Operation.CONTAINS : return ["like", "%", "%"];
             case Operation.STARTWITH : return ["like", "", "%"];;
             case Operation.ENDWITH : return ["like", "%", ""];;
             case Operation.GREATHER : return [">", "", ""];;

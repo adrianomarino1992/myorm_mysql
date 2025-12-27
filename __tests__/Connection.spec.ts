@@ -3,24 +3,21 @@ import InvalidOperationException from "../src/core/exceptions/InvalidOperationEx
 import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 import Context from "./classes/TestContext";
 
-describe("Connection", ()=>{
+describe("Connection", () => {
 
-
-    test("Test open and close connection", async ()=>{
+    test("Should open and close a connection", async () => {
 
         var conn = new MySQLDBConnection("localhost", 3306, "mydb", "root", "root");
 
         expect(conn).not.toBe(null);
 
         await conn.OpenAsync();
-
         await conn.CloseAsync();
-       
 
     });
 
 
-    test("Test open and close connection using enviroment variables", async ()=>{
+    test("Should open and close a connection using environment variables", async () => {
 
       process.env.DB_HOST = "localhost";      
       process.env.DB_PORT = "3306";
@@ -28,41 +25,36 @@ describe("Connection", ()=>{
       process.env.DB_PASS = "root";
       process.env.DB_NAME = "mydb";
 
-      let context = new Context(MySQLDBManager.BuildFromEnviroment());
+        let context = new Context(MySQLDBManager.BuildFromEnviroment());
 
-      let now = await context.ExecuteQuery("select now()");
+        let now = await context.ExecuteQuery("select now()");
 
-      expect(now).not.toBeUndefined();
+        expect(now).not.toBeUndefined();
 
     });
 
-    describe("Should fail", ()=> {
 
-        test("Test open and close connection with no one enviroment variables", async ()=>{
+    describe("Failure scenarios", () => {
 
-            process.env.DB_HOST = "";      
+        test("Should fail when no environment variables are provided", async () => {
+
+            process.env.DB_HOST = "";
             process.env.DB_PORT = "";
             process.env.DB_USER = "";
             process.env.DB_PASS = "";
-            process.env.DB_NAME = "";              
+            process.env.DB_NAME = "";
 
-            try
-            {
-                let context = new Context(MySQLDBManager.BuildFromEnviroment());  
-
-                throw new Error("Shouyld have failed");
-
-            }catch(exception)
-            {
-                if(!(exception instanceof InvalidOperationException))
-                {
-                    throw new Error("Some unespected error");
+            try {
+                new Context(MySQLDBManager.BuildFromEnviroment());
+                throw new Error("Expected operation to fail");
+            } catch (exception) {
+                if (!(exception instanceof InvalidOperationException)) {
+                    throw new Error("Unexpected error type");
                 }
-            }    
-      
-          });
-      })
-    
-  
+            }
+
+        });
+
+    });
 
 });

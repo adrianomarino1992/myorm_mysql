@@ -132,13 +132,13 @@ export default class MySQLFluentField<T extends object, K extends keyof T, P ext
     }
 
 
-    public Constains(value: T[K]): P  {
+    public Contains(value: T[K]): P  {
 
         if(this._isOr)
         {
             this._mysqlSet.Or({
                 Field : this._field,
-                Kind : Operation.CONSTAINS, 
+                Kind : Operation.CONTAINS, 
                 Value : value 
             });
     
@@ -147,7 +147,7 @@ export default class MySQLFluentField<T extends object, K extends keyof T, P ext
 
         this._mysqlSet.Where({
             Field : this._field,  
-            Kind : Operation.CONSTAINS,               
+            Kind : Operation.CONTAINS,               
             Value : value
         });     
 
