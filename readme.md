@@ -18,10 +18,21 @@ npm install myorm_mysql
 ```
 
 ---
+## Configuration
 
-## TypeScript Configuration
+#### Peer Dependencies
 
-Decorators must be enabled in your `tsconfig.json`:
+This ORM relies on the `reflect-metadata` package to enable runtime type reflection used by decorators.
+
+Make sure it is installed and imported **once** in your application entry point:
+
+```typescript
+import 'reflect-metadata';
+```
+
+#### Typescript
+
+Decorators and metadata emission must be enabled in your `tsconfig.json`:
 
 ```json
 {
@@ -29,7 +40,12 @@ Decorators must be enabled in your `tsconfig.json`:
   "emitDecoratorMetadata": true
 }
 ```
+
+These options are required for entity mapping, dependency injection, and relationship metadata to work correctly.
+
 ---
+
+
 
 
 
@@ -45,7 +61,10 @@ Defines the database table name associated with the entity.
 
 ### @Column
 Marks a class property as a table column.
-An optional parameter allows you to specify a custom column name.
+
+You may optionally provide a custom column name as a parameter.
+
+If any other column-related decorator is applied to the property, the `@Column` decorator becomes optional — except when you want to explicitly define the column name.
 
 ### @PrimaryKey
 Indicates that the column is the primary key of the table.
@@ -154,8 +173,7 @@ import { Message } from './Message';
 export class Person
 {
     // Primary key with SERIAL (auto-increment)
-    @PrimaryKey()
-    @Column()
+    @PrimaryKey()    
     @DataType(DBTypes.AUTO_INCREMENT)
     public Id!: number;
 
@@ -172,32 +190,26 @@ export class Person
     public Age!: number;
 
     // Explicit integer column
-    @Column()
     @DataType(DBTypes.INTEGER)
     public CEP!: number;
 
     // MySQL TEXT[]
-    @Column()
     @DataType(DBTypes.TEXTARRAY)
     public PhoneNumbers!: string[];
 
     // MySQL INTEGER[]
-    @Column()
     @DataType(DBTypes.INTEGERARRAY)
     public Documents!: number[];
 
     // MySQL DATE
-    @Column()
-    @DataType(DBTypes.DATE)
+   @DataType(DBTypes.DATE)
     public Birth!: Date;
 
     // One person can write many messages
-    @Column()
     @OneToMany(() => Message, "From")
     public MessagesWriten?: Message[];
 
     // Many persons can receive many messages
-    @Column()
     @ManyToMany(() => Message, "To")
     public MessagesReceived?: Message[];
 
@@ -232,7 +244,6 @@ export class Message
 {
     // Primary key with SERIAL (auto-increment)
     @PrimaryKey()
-    @Column()
     @DataType(DBTypes.AUTO_INCREMENT)
     public Id : number = -1;
 
@@ -241,12 +252,10 @@ export class Message
     public Message : string;
 
     // One person can write many messages
-    @Column()
     @ManyToOne(()=> Person, "MessagesWriten")
     public From? : Person;
 
     // Many persons can receive many messages
-    @Column()  
     @ManyToMany(()=> Person, "MessagesReceived")  
     public To? : Person[];     
 
@@ -684,6 +693,123 @@ await context.Persons.DeleteAsync(person);
 
 ---
 
+
+# Transactions
+
+This ORM provides first-class support for database transactions, including **begin**, **commit**, **rollback**, and **savepoints**.  
+This allows you to safely group multiple operations and partially rollback changes when needed.
+
+### Basic Usage
+
+You can manually control a transaction using the context API:
+
+```typescript
+await context.BeginTransactionAsync();
+
+// database operations...
+
+await context.CommitAsync();
+```
+If something goes wrong, you can rollback the entire transaction:
+
+```typescript
+await context.RollBackAsync();
+```
+
+
+### Full Rollback Example
+
+In this example, **any error** causes the entire transaction to be rolled back:
+
+```typescript
+await context.BeginTransactionAsync();
+
+try 
+{
+    await context.Persons.AddAsync(person1);
+    await context.Persons.AddAsync(person2);
+
+    await context.Messages.AddAsync(message);
+
+    await context.CommitAsync();
+}
+catch (error) 
+{
+    // Reverts all operations executed within the transaction
+    await context.RollBackAsync();
+    throw error;
+}
+```
+What happens here:
+
+- All operations are executed inside a single transaction
+
+- If any step fails, no data is persisted
+
+- The transaction is only committed if everything succeeds
+
+## Savepoint with Partial Rollback Example
+
+Savepoints allow you to protect a specific section of a transaction.
+
+
+```typescript
+await context.BeginTransactionAsync();
+
+try 
+{
+    await context.Persons.AddAsync(person1);
+    await context.Persons.AddAsync(person2);
+    await context.Persons.AddAsync(person3);
+    await context.Persons.AddAsync(person4);
+
+    // Creates a savepoint after all persons are added
+    await context.SavePointAsync("persons");
+
+    await context.Messages.AddAsync(message);
+
+    // Something went wrong while saving the message
+    throw new Error("Message validation failed");
+
+    await context.CommitAsync();
+}
+catch (error) 
+{
+    // Rollback only the operations after the savepoint
+    await context.RollBackAsync("persons");
+
+    // Commit everything that happened before the savepoint
+    await context.CommitAsync();
+}
+
+```
+Result:
+
+- All Person entities are saved
+
+- The Message entity is discarded
+
+- The transaction completes successfully
+
+## Recommended Pattern
+```typescript
+await context.BeginTransactionAsync();
+
+try 
+{
+    // operations
+    await context.CommitAsync();
+} 
+catch 
+{
+    await context.RollBackAsync();
+    throw;
+}
+```
+Using `try/catch` with transactions is strongly recommended to guarantee data integrity and predictable behavior.
+
+---
+
 # Fluent query methods
 
 ## Where
@@ -741,6 +867,88 @@ let persons = await context.Persons.WhereField("MessagesReceived").IsNull().ToLi
  let pg_result = await context.ExecuteQuery("select now()");
 ```
 
+
+# GetTypeMapping (Type Mapping Helper)
+
+The `MYSQLDBSet<T>.GetTypeMapping()` feature exposes metadata about an entity mapping, allowing you to safely build **dynamic SQL statements** based on entity definitions, column mappings, and relationships — without hardcoding table or column names.
+
+This is especially useful for:
+- Dynamic queries
+- Custom SQL generation
+- Debugging mappings
+- Advanced filtering scenarios
+
+### Basic Usage
+```typescript
+
+let helper =  context.Persons.GetTypeMapping();
+
+```
+The returned helper provides access to:
+
+- Table → mapped table name
+
+- Columns → mapped column names
+
+- EvaluateStatement() → generates SQL expressions from strongly-typed filters
+
+
+#### Update example
+```typescript
+
+let helper =  context.Persons.GetTypeMapping();
+
+let person = await context.Persons.OrderBy("Age").FirstOrDefaultAsync();
+
+let update = `update ${helper.Table} 
+              set ${helper.Columns.Age} = ${helper.Columns.Age} - 1 
+              where ${helper.Columns.Id} = ${person?.Id}`; 
+
+
+let rowCount = (await context.ExecuteQuery(update)).rowCount; 
+```
+
+#### Select using EvaluateStatement()
+```typescript
+const helper = context.Persons.GetTypeMapping();
+
+const whereClause = helper.EvaluateStatement({
+    Field: "Age",
+    Value: 20
+});
+
+const select = `select ${helper.Columns.Name}, ${helper.Columns.Email} from ${helper.Table} where ${whereClause}`;
+
+```
+
+#### Querying using relation fields
+
+```typescript
+
+const helper = context.Persons.GetTypeMapping();
+
+const whereClause = helper.EvaluateStatement({
+    Field: "MessagesReceived",
+    Kind: Operation.CONTAINS,
+    Value: [messageObject]
+});
+
+const select = `select ${helper.Columns.Id} from ${helper.Table} where ${whereClause}`; 
+ 
+```
+
+`GetTypeMapping()` gives you a low-level but type-aware view of your entity mapping:
+
+- No hardcoded table or column names
+
+- Safe dynamic SQL generation
+
+- Works with scalar fields and relations
+
+- Ideal for advanced scenarios where LINQ-like APIs are not enough
+
+
+---
 
 
 ## Contributing

@@ -1,4 +1,4 @@
-
+import 'reflect-metadata';
 import { Operation } from 'myorm_core';
 import {CompleteSeedAsync, TruncateTablesAsync} from './functions/TestFunctions';
 

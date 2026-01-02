@@ -1,4 +1,4 @@
-import {IStatement, Operation, IDBSet, IFluentField, AbstractSet} from "myorm_core";
+import {IStatement, Operation, IDBSet, IFluentField, AbstractSet, ITypeMapping} from "myorm_core";
 
 
 import Type from "../core/design/Type";
@@ -19,7 +19,7 @@ import StringUtils from "../core/utils/StringUtils";
 
 
 export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
-{   
+{ 
     private _type! : {new (...args : any[]) : T};    
     private _table! : string;
     private _maps! : ReturnType<typeof Type.GetColumnNameAndType>;
@@ -446,7 +446,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                 let colletion = this._context.Collection(cs.Type as {new (...args: any[]) : Object})!;
 
                 for(let i of cs.Objs)
-                    await (colletion as MySQLDBSet<typeof cs.Type>)["AddObjectAsync"](i as any, true, [], visiteds);
+                    await (colletion as any as MySQLDBSet<typeof cs.Type>)["AddObjectAsync"](i as any, true, [], visiteds);
             }
 
             for(let cs of objectsToUpdate)
@@ -454,7 +454,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                 let colletion = this._context.Collection(cs.Type as {new (...args: any[]) : Object})!;
 
                 for(let i of cs.Objs)
-                    await (colletion as MySQLDBSet<typeof cs.Type>)["UpdateObjectAsync"](i.Obj as any, false, i.UpdatableFields ?? [], [], visiteds);
+                    await (colletion as any as MySQLDBSet<typeof cs.Type>)["UpdateObjectAsync"](i.Obj as any, false, i.UpdatableFields ?? [], [], visiteds);
             }
 
             for(let b of buildSubupdates)
@@ -489,7 +489,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
         });              
     }
 
-    UpdateSelectionAsync(): Promise<void> {
+    UpdateSelectionAsync(): Promise<number> {
         
         return this.CreatePromisse(async() => 
         {
@@ -583,7 +583,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                                 continue;        
                                 
                             if(!Type.HasValue(Reflect.get(i as any, subPK)))
-                                await (colletion as MySQLDBSet<typeof subType>)["AddAsync"](i as any);
+                                await (colletion as any as MySQLDBSet<typeof subType>)["AddAsync"](i as any);
 
                             if(relation)
                             {
@@ -626,7 +626,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                             continue; 
 
                         if(!Type.HasValue(Reflect.get(set[0].Value as any, subPK)))
-                            await (colletion as MySQLDBSet<typeof subType>)["AddAsync"](set[0].Value as any);
+                            await (colletion as any as MySQLDBSet<typeof subType>)["AddAsync"](set[0].Value as any);
                         
                         if(relation)
                         {
@@ -707,6 +707,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
             update += " " + whereSrt;                 
 
             await this._manager.ExecuteNonQueryAsync(update);
+
+            return 1;
         });
         
         
@@ -1059,7 +1061,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                                     item[objetsToRemoveThisReferece.SubField] = undefined;
                                 }   
 
-                                await (colletion as MySQLDBSet<typeof subType>)["UpdateObjectAsync"](item as any, false, [], [], visiteds);
+                                await (colletion as any as MySQLDBSet<typeof subType>)["UpdateObjectAsync"](item as any, false, [], [], visiteds);
                             }
                         }
                         
@@ -1208,7 +1210,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                     let colletion = this._context.Collection(cs.Type as {new (...args: any[]) : Object})!;
     
                     for(let i of cs.Objs)
-                        await (colletion as MySQLDBSet<typeof cs.Type>)["AddObjectAsync"](i as any, true, [], visiteds);
+                        await (colletion as any as MySQLDBSet<typeof cs.Type>)["AddObjectAsync"](i as any, true, [], visiteds);
                 }
     
                 for(let cs of objectsToUpdate)
@@ -1216,7 +1218,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                     let colletion = this._context.Collection(cs.Type as {new (...args: any[]) : Object})!;
     
                     for(let i of cs.Objs)
-                        await (colletion as MySQLDBSet<typeof cs.Type>)["UpdateObjectAsync"](i.Obj as any, false, i.UpdatableFields ?? [], [], visiteds);
+                        await (colletion as any as MySQLDBSet<typeof cs.Type>)["UpdateObjectAsync"](i.Obj as any, false, i.UpdatableFields ?? [], [], visiteds);
                 }
     
                 for(let b of buildSubupdates)
@@ -1280,7 +1282,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
         return[];
     }
     
-    public DeleteSelectionAsync(): Promise<void> {
+    public DeleteSelectionAsync(): Promise<number> {
         
         return this.CreatePromisse(async()=>{
 
@@ -1308,6 +1310,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
             }              
 
             await this._manager.ExecuteNonQueryAsync(query);
+
+            return 1;
 
         });
     }
@@ -1779,6 +1783,38 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     public CleanQueryTree(): void {
 
         this.Reset();
+    }
+
+     public GetTypeMapping() : ITypeMapping<T>
+    {
+        let p = {} as ITypeMapping<T>;
+        
+        (p.Columns as any) = {};
+
+        for(let c of this._maps)
+        {
+            (p.Columns as any)[c.Field] = c.Column;
+        }
+
+        p.Table = this._table;
+
+        (p as any).EvaluateStatement = (statement: any) => {
+
+            if(!statement)
+                throw new InvalidOperationException("The statement is required");
+
+            let s : IMySQLStatement = {
+                StatementType: StatementType.WHERE, 
+                Statement : statement
+            };
+
+            if(!s.Statement.Kind)
+                s.Statement.Kind = Operation.EQUALS;
+
+            return this.EvaluateStatement(s);
+        }
+
+        return p as ITypeMapping<T>;
     }
    
     private CreateValueStatement(colType : DBTypes, value : any) : string

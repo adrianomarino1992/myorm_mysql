@@ -16,32 +16,31 @@ export class Person extends Entity
     public Age : number; 
     
 
-    @Column()
+    
     @DataType(DBTypes.INTEGER)
     public CEP : number; 
 
-    @Column()
+    
     @OneToOne(()=> Message, "User")
     public Message? : Message;
 
-    @Column()
+    
     @DataType(DBTypes.TEXTARRAY)
     public PhoneNumbers : string[];
 
-    @Column()
+    
     @DataType(DBTypes.INTEGERARRAY)
     public Documents : number[];
 
-    @Column()
+    
     @DataType(DBTypes.DATE)
     public Birth : Date;
 
-
-    @Column()
+    
     @OneToMany(()=> Message, "From")
     public MessagesWriten? : Message[];
 
-    @Column()
+    
     @ManyToMany(()=> Message, "To")
     public MessagesReceived? : Message[];
 
@@ -49,7 +48,6 @@ export class Person extends Entity
     @Column() 
     public LinkTestValueInPerson : number;
 
-    @Column() 
     @DataType(DBTypes.INTEGERARRAY)
     public LinkTestArrayInPerson : number[];
   

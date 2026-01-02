@@ -1,5 +1,6 @@
 
 
+import 'reflect-metadata';
 import { TryAsync, CreateConnection } from "./functions/TestFunctions";
 import Type from "../src/core/design/Type";
 import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
@@ -35,18 +36,18 @@ describe("Types and metadata", ()=>{
 
         var manager = new MySQLDBManager(conn);
 
-        let test_db = await manager.CheckDatabaseAsync('test_db');
+        let test_db = await manager.CheckDatabaseAsync('mydb');
 
         if(test_db)
         {
             await conn.AsMySQL().OpenAsync();
-            await conn.ExecuteNonQueryAsync(`drop database test_db;`);
+            await conn.ExecuteNonQueryAsync(`drop database mydb;`);
             await conn.CloseAsync();
         }
 
-        await manager.CreateDataBaseAsync('test_db');
+        await manager.CreateDataBaseAsync('mydb');
        
-        test_db = await manager.CheckDatabaseAsync('test_db');
+        test_db = await manager.CheckDatabaseAsync('mydb');
 
         expect(test_db).toBeTruthy();        
 
@@ -77,7 +78,7 @@ describe("Types and metadata", ()=>{
     
             expect(test_table).toBeTruthy();        
     
-        });
+        });5
 
          test("Testing erro while creating a table with no primary key ", async ()=>{
     

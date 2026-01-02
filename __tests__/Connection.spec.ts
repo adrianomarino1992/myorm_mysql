@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { MySQLDBManager } from "../src/Index";
 import InvalidOperationException from "../src/core/exceptions/InvalidOperationException";
 import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
@@ -7,7 +8,7 @@ describe("Connection", () => {
 
     test("Should open and close a connection", async () => {
 
-        var conn = new MySQLDBConnection("localhost", 3306, "mydb", "root", "root");
+        var conn = new MySQLDBConnection("localhost", 3306, "mysql", "root", "root");
 
         expect(conn).not.toBe(null);
 
@@ -18,12 +19,12 @@ describe("Connection", () => {
 
 
     test("Should open and close a connection using environment variables", async () => {
-
+5
       process.env.DB_HOST = "localhost";      
       process.env.DB_PORT = "3306";
       process.env.DB_USER = "root";
       process.env.DB_PASS = "root";
-      process.env.DB_NAME = "mydb";
+      process.env.DB_NAME = "mysql";
 
         let context = new Context(MySQLDBManager.BuildFromEnviroment());
 

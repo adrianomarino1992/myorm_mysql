@@ -29,7 +29,12 @@ export function CreateConnection() {
 }
 
 export function CreateContext(): Context {
-  return new Context(new MySQLDBManager(CreateConnection()));
+  let context = new Context(new MySQLDBManager(CreateConnection()));
+  context.SetLogger((t, q) => {
+    console.log(t, q)
+  })
+
+  return context;
 }
 
 
@@ -60,6 +65,7 @@ export async function CompleteSeedAsync(): Promise<Context> {
   await TruncateTablesAsync();
 
   let adriano = new Person("adriano", "adriano@test.com");
+  adriano.Age = 20;
   adriano.Birth = new Date(1992, 4, 23);
   adriano.Documents = [1234432, 443224, 4324322, 32142132, 432432545]; 
   adriano.LinkTestValueInPerson = 1;
