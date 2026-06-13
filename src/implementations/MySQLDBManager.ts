@@ -22,40 +22,78 @@ export default class MySQLDBManager extends AbstractManager
         this._connection = connection;
     }
 
-     public static Build(host : string, port : number, dababase : string, user : string, pass : string) : MySQLDBManager
+     public static Build(host: string, port: number, database: string,user: string, pass: string, usePool: boolean = true, max: number = 10) : MySQLDBManager
     {
-        return new MySQLDBManager(new MySQLDBConnection(host, port, dababase, user, pass));
+        if(!host?.trim())
+            throw new InvalidOperationException("Host cannot be null or empty.");
+
+        if(port <= 0)
+            throw new InvalidOperationException("Port must be greater than zero.");
+
+        if(!database?.trim())
+            throw new InvalidOperationException("Database cannot be null or empty.");
+
+        if(!user?.trim())
+            throw new InvalidOperationException("User cannot be null or empty.");
+
+        if(!pass?.trim())
+            throw new InvalidOperationException("Password cannot be null or empty.");       
+
+        if(max <= 0)
+            throw new InvalidOperationException("Maximum pool size must be greater than zero.");        
+
+        return new MySQLDBManager(new MySQLDBConnection(host, port, database, user, pass, usePool, max));
     }
 
-    public static BuildFromEnviroment()
+    public static BuildFromEnviroment(): MySQLDBManager
     {
-        let host = process.env.DB_HOST || "";
-        let port = process.env.DB_PORT || "0";
-        let username = process.env.DB_USER || "";
-        let password = process.env.DB_PASS || "";
-        let database = process.env.DB_NAME || "";
-        let intPort = 0;
-        try{
-            intPort = Number.parseInt(port);
-        }catch{}
+        const host = process.env.DB_HOST ?? "";
+        const port = process.env.DB_PORT ?? "";
+        const user = process.env.DB_USER ?? "";
+        const pass = process.env.DB_PASS ?? "";
+        const database = process.env.DB_NAME ?? "";
+
+        const intPort = Number.parseInt(port, 10);
+
+        if(Number.isNaN(intPort))
+            throw new InvalidOperationException(
+                "DB_PORT environment variable is not a valid integer."
+            );
+
+        let usePool: boolean | undefined;       
+        let maxPool: number | undefined;
+
+        if(process.env.DB_USE_POOL)
+        {
+            const value = process.env.DB_USE_POOL.trim().toLowerCase();
+
+            if(value != "true" && value != "false")
+                throw new InvalidOperationException(
+                    "DB_USE_POOL environment variable must be 'true' or 'false'."
+                );
+
+            usePool = value == "true";
+        }
+
+
+        if(process.env.DB_MAX_POOL_SIZE)
+        {
+            maxPool = Number.parseInt(process.env.DB_MAX_POOL_SIZE, 10);
+
+            if(Number.isNaN(maxPool))
+                throw new InvalidOperationException(
+                    "DB_MAX_POOL_SIZE environment variable is not a valid integer."
+                );
+        }
+
+        return MySQLDBManager.Build(host, intPort, database, user, pass, usePool, maxPool);
+    }
+    
+    public static async CloseAllPoolAsync() : Promise<void>
+    {
+        await MySQLDBConnection.CloseAllPoolsAsync();
+    }
         
-        if(!host)
-            throw new InvalidOperationException(`DB_HOST enviroment variable was no value`);
-
-        if(!port || Number.isNaN(intPort))
-            throw new InvalidOperationException(`DB_PORT enviroment variable was no value`);
-
-        if(!username)
-            throw new InvalidOperationException(`DB_USER enviroment variable was no value`);
-
-        if(!password)
-            throw new InvalidOperationException(`DB_PASS enviroment variable was no value`);
-            
-        if(!database)
-            throw new InvalidOperationException(`DB_NAME enviroment variable was no value`);
-
-        return MySQLDBManager.Build(host, intPort, database, username, password)
-    }
 
     public async CheckConnectionAsync(): Promise<boolean> {
         

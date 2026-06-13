@@ -3,37 +3,100 @@ import mysql  from 'mysql';
 import ConnectionFailException from "../core/exceptions/ConnectionFailException";
 import QueryFailException from "../core/exceptions/QueryFailException";
 import {AbstractConnection} from 'myorm_core';
-import { InvalidOperationException } from '../Index';
+import { InvalidOperationException, MySQLDBManager } from '../Index';
 
 export default class MySQLDBConnection extends AbstractConnection
 {
+    protected static _pools : {[key: string] : mysql.Pool} = {}; 
+
     public HostName!: string;
     public Port!: number;
     public DataBaseName!: string;
     public UserName!: string;
     public PassWord!: string; 
+    public InPoolMode! : boolean;    
+    public MaxPool!: number;
     public IsOpen: boolean;
-    private _conn! : mysql.Connection;
-    private _database! : string; 
+    private _conn! : mysql.Connection | mysql.PoolConnection;
+    private _originalDatabase! : string; 
+    private _originalUsePoolMode! : boolean; 
     private _inTransactionMode : boolean = false;
    
 
-    constructor(host : string, port : number, dababase : string, user : string, pass : string)
+    constructor(host : string, port : number, dabatase : string, user : string, pass : string, usePool : boolean = true, max: number = 10)
     {        
         super();
         this.HostName = host;
         this.Port = port;
-        this.DataBaseName = dababase;
-        this._database = dababase;
+        this.DataBaseName = dabatase;
+        this._originalDatabase = dabatase;
         this.UserName = user;
-        this.PassWord = pass;  
+        this.PassWord = pass; 
+        this._originalUsePoolMode = usePool;
+        this.InPoolMode = usePool;       
+        this.MaxPool = max; 
         this.IsOpen = false;      
     }     
-    
+
+    protected GetConnectionIdentifier()
+    {
+        return `${this.DataBaseName}${this.HostName}${this.Port}${this.UserName}`;
+    }
+
+    public static async CloseAllPoolsAsync()
+    {
+        for(let key in MySQLDBConnection._pools)
+        {
+            await MySQLDBConnection._pools[key].end();
+        }
+    }
+
+    protected static async ClosePoolAsync(key: string)
+    {
+        if(!MySQLDBConnection._pools[key])
+            return;
+
+        await MySQLDBConnection._pools[key].end();
+        
+    }
+
+    protected static StartPoolingIfNeeded(mysqlConnection: MySQLDBConnection)
+    {
+        if(!MySQLDBConnection._pools[mysqlConnection.GetConnectionIdentifier()])
+        {
+            MySQLDBConnection._pools[mysqlConnection.GetConnectionIdentifier()] = mysql.createPool({
+                user: mysqlConnection.UserName,
+                host: mysqlConnection.HostName,
+                database : mysqlConnection.DataBaseName,
+                port: mysqlConnection.Port,
+                password: mysqlConnection.PassWord,
+                connectionLimit: mysqlConnection.MaxPool
+            });            
+        }
+
+       
+    }
+
     public AsMySQL() : MySQLDBConnection
     {        
         this.DataBaseName = "mysql";
+        this.InPoolMode = false;
         return this;
+    }
+
+
+    private async ExtractPoolConnectionFromPool() : Promise<mysql.PoolConnection>
+    {
+        return new Promise<mysql.PoolConnection>((resolve, reject) => {
+
+            MySQLDBConnection._pools[this.GetConnectionIdentifier()]!.getConnection((err, conn) => {
+                if(err)                
+                    reject(err);
+                else
+                    resolve(conn);               
+
+            });
+        });
     }
     
     public OpenAsync() : Promise<void>
@@ -48,15 +111,26 @@ export default class MySQLDBConnection extends AbstractConnection
                 if(this.IsOpen)
                     await this.CloseAsync();
 
-            this._conn = mysql.createConnection({
-                host: this.HostName,
-                user: this.UserName,
-                password: this.PassWord,
-                database: this.DataBaseName
-            });                        
-    
-            this.DataBaseName = this._database;
-                await this._conn.connect();
+                if(this.InPoolMode)
+                {
+                    MySQLDBConnection.StartPoolingIfNeeded(this);
+
+                     this._conn = await this.ExtractPoolConnectionFromPool();
+
+                }else{
+
+                    this._conn = mysql.createConnection({
+                    host: this.HostName,
+                    user: this.UserName,
+                    password: this.PassWord,
+                    database: this.DataBaseName
+                    });                        
+        
+                    await this._conn.connect();
+                }
+
+                
+              
                 this.IsOpen = true;
                 resolve();
     
@@ -190,10 +264,16 @@ export default class MySQLDBConnection extends AbstractConnection
         {
             try
             {
-                if(!this.IsOpen)
+                if(!this.IsOpen || !this._conn)
                     return resolve();
 
-                await this._conn.end();
+                if(!this.InPoolMode)
+                    await this._conn.end();
+                else                
+                    (this._conn as mysql.PoolConnection).release();
+                
+                this.DataBaseName = this._originalDatabase;
+                this.InPoolMode = this._originalUsePoolMode;
                 this.IsOpen = false;
                 resolve();
                 

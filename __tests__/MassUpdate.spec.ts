@@ -1,7 +1,13 @@
 import 'reflect-metadata';
 import { Operation } from 'myorm_core';
 import {CompleteSeedAsync, TruncateTablesAsync} from './functions/TestFunctions';
+import { describe, test, expect, afterAll, beforeAll } from '@jest/globals';
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 
+afterAll(async () =>
+{
+    await MySQLDBConnection.CloseAllPoolsAsync();
+});
 
 describe("Mass operations", ()=>{    
 

@@ -9,7 +9,7 @@ import TypeNotMappedException from "../core/exceptions/TypeNotMappedException";
 import MySQLDBManager from "./MySQLDBManager";
 import MySQLDBSet from "./MySQLDBSet";
 import MySQLSetHelper from "./MySQLSetHelper";
-import { DBTypes } from "../Index";
+import { DBTypes, MySQLDBConnection } from "../Index";
 import { IJoining } from "myorm_core/lib/objects/interfaces/IDBContext";
 import {DBOperationLogHandler, LogType} from 'myorm_core'; 
 
@@ -29,6 +29,12 @@ export default abstract class MySQLDBContext extends AbstractContext
     }      
     
     
+    public static async CloseAllPoolAsync() : Promise<void>
+    {
+        await MySQLDBConnection.CloseAllPoolsAsync();
+    }
+    
+
     public SetLogger(logger: DBOperationLogHandler): void {
         this._manager.SetLogger(logger);
     }

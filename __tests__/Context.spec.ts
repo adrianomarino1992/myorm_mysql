@@ -4,7 +4,13 @@ import { Person } from './classes/TestEntity';
 import { Operation } from 'myorm_core';
 import {TruncatePersonTableAsync, CreateContext, SeedAsync, CompleteSeedAsync} from './functions/TestFunctions';
 import TypeNotMappedException from '../src/core/exceptions/TypeNotMappedException';
+import { describe, test, expect, afterAll, beforeAll } from '@jest/globals';
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 
+afterAll(async () =>
+{
+    await MySQLDBConnection.CloseAllPoolsAsync();
+});
 
 
 beforeAll(async()=>{

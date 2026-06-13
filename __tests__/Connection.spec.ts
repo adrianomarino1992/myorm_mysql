@@ -1,8 +1,14 @@
 import 'reflect-metadata';
 import { MySQLDBManager } from "../src/Index";
 import InvalidOperationException from "../src/core/exceptions/InvalidOperationException";
-import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 import Context from "./classes/TestContext";
+import { describe, test, expect, afterAll, beforeAll } from '@jest/globals';
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
+
+afterAll(async () =>
+{
+    await MySQLDBConnection.CloseAllPoolsAsync();
+});
 
 describe("Connection", () => {
 

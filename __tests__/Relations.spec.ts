@@ -3,8 +3,13 @@ import { Person } from './classes/TestEntity';
 import { Operation } from 'myorm_core';
 import { TryAsync , TruncateTablesAsync, CreateContext } from './functions/TestFunctions';
 import { Message } from './classes/RelationEntity';
+import { describe, test, expect, afterAll, beforeAll } from '@jest/globals';
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 
-
+afterAll(async () =>
+{
+    await MySQLDBConnection.CloseAllPoolsAsync();
+});
 
 beforeAll(async ()=> await TruncateTablesAsync());
 

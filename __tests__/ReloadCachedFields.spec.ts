@@ -2,7 +2,13 @@ import 'reflect-metadata';
 import { InvalidOperationException } from "../src/Index";
 import { Message } from "./classes/RelationEntity";
 import { CompleteSeedAsync, TruncatePersonTableAsync } from "./functions/TestFunctions";
+import { describe, test, expect, afterAll, beforeAll } from '@jest/globals';
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 
+afterAll(async () =>
+{
+    await MySQLDBConnection.CloseAllPoolsAsync();
+});
 
 beforeAll(async()=>{
     await TruncatePersonTableAsync();

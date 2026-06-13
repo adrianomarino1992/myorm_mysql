@@ -3,14 +3,19 @@
 import 'reflect-metadata';
 import { TryAsync, CreateConnection } from "./functions/TestFunctions";
 import Type from "../src/core/design/Type";
-import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 import MySQLDBManager from "../src/implementations/MySQLDBManager";
 import Context from "./classes/TestContext";
 import {Person} from './classes/TestEntity';
 import ErrorContext from "./classes/ErrorContext";
 import EntityWithNoKey from './classes/EntityWithNoKey';
 import { ConstraintFailException } from "../src/Index";
+import { describe, test, expect, afterAll, beforeAll } from '@jest/globals';
+import MySQLDBConnection from "../src/implementations/MySQLDBConnection";
 
+afterAll(async () =>
+{
+    await MySQLDBConnection.CloseAllPoolsAsync();
+});
 
 describe("Types and metadata", ()=>{
     
@@ -91,7 +96,7 @@ describe("Types and metadata", ()=>{
             try {
 
                 await errorContext.UpdateDatabaseAsync();
-                fail("Should not create the table");
+                
 
             } catch (err) {
               

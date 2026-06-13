@@ -315,14 +315,48 @@ export default class Context extends MySQLDBContext
 const context = new Context(MySQLDBManager.Build("localhost", 5432, "test_db", "username", "password"));
 ```
 
-### Create with enviroment variables 
+### Create with environment variables
 
-this method will try get values from __process.env__ keys. The ORM will search for __DB_HOST__, __DB_PORT__, __DB_NAME__, __DB_USER__ and __DB_PASS__
+`MySQLDBManager.BuildFromEnviroment()` creates the manager using values from
+`process.env`.
 
- 
- 
+| Variable | Required | Description | Default |
+| --- | --- | --- | --- |
+| `DB_HOST` | Yes | PostgreSQL server host | - |
+| `DB_PORT` | Yes | PostgreSQL server port | - |
+| `DB_NAME` | Yes | Database name | - |
+| `DB_USER` | Yes | Database user | - |
+| `DB_PASS` | Yes | Database password | - |
+| `DB_USE_POOL` | No | Enables connection pooling (`true` or `false`) | `true` |
+| `DB_MAX_POOL_SIZE` | No | Maximum number of pool connections | `10` |
+
+Example:
+
+```powershell
+DB_HOST = "localhost"
+DB_PORT = "5432"
+DB_NAME = "test_db"
+DB_USER = "username"
+DB_PASS = "password"
+DB_USE_POOL = "true"
+DB_MAX_POOL_SIZE = "10"
+```
+
+Then create the context:
+
 ```typescript
-const  context = new Context(MySQLDBManager.BuildFromEnviroment());
+const context = new Context(MySQLDBManager.BuildFromEnviroment());
+```
+
+The method validates the required values and converts numeric and boolean
+variables to their corresponding types. Invalid values cause an
+`InvalidOperationException`.
+
+The ORM reads `process.env` directly and does not load `.env` files. When using
+a `.env` file, load it before calling `BuildFromEnviroment()`.
+
+```typescript
+const context = new Context(MySQLDBManager.BuildFromEnviroment());
 ```
 
 After creating the context, the database schema can be created or updated automatically based on the entity metadata. 
@@ -864,7 +898,7 @@ let persons = await context.Persons.WhereField("MessagesReceived").IsNull().ToLi
 # Method to run queries with connection manager system
 
 ```typescript
- let pg_result = await context.ExecuteQuery("select now()");
+ let result = await context.ExecuteQuery("select now()");
 ```
 
 
