@@ -8,17 +8,7 @@ export default class Type
 {
     public static GetProperties(cTor : Function)
     {
-        let empty = Reflect.construct(cTor, []);
-
-        let keys = Object.keys(empty);
-        
-        SchemasDecorators.GetDecotaredProperties(cTor).forEach(k => 
-        {
-            if(keys.findIndex(v => v == k) == -1)
-                keys.push(k);
-        });
-
-        return keys;
+        return SchemasDecorators.GetDecotaredProperties(cTor);
     }
 
     public static GetDesingType(cTor : Function, propertyName : string) : {new (...args: any[]) : unknown} | undefined

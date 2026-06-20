@@ -2082,6 +2082,9 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                    
                     let dt : Date = pgStatement.Statement.Value as unknown as Date;
 
+                    if(typeof pgStatement.Statement.Value == 'string')
+                        dt = this.CastStringToDate(pgStatement.Statement.Value);
+
                     if(!dt)
                         throw new InvalidOperationException(`Can not cast the value: "${pgStatement.Statement.Value}" in a valid date`);
         
