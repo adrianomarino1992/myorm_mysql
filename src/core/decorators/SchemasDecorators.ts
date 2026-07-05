@@ -44,7 +44,7 @@ export default class SchemasDecorators
             current = current.__proto__;
         }  
 
-        return meta;
+        return [...new Set(meta)];
     }
     
 

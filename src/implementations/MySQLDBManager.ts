@@ -15,6 +15,17 @@ export default class MySQLDBManager extends AbstractManager
     private _connection! : MySQLDBConnection;   
     private _logger? : DBOperationLogHandler;
     private _inTransactionMode : boolean = false;
+    private _autoCommit: boolean = true;
+
+    public get AutoCommit(): boolean
+    {
+        return this._autoCommit;
+    }
+
+    public get InTransactionMode(): boolean
+    {
+        return this._inTransactionMode;
+    }
 
     public constructor(connection : MySQLDBConnection)
     {
@@ -22,7 +33,7 @@ export default class MySQLDBManager extends AbstractManager
         this._connection = connection;
     }
 
-     public static Build(host: string, port: number, database: string,user: string, pass: string, usePool: boolean = true, max: number = 10) : MySQLDBManager
+     public static Build(host: string, port: number, database: string,user: string, pass: string, usePool: boolean = true, max: number = 10,  autocommit: boolean = true) : MySQLDBManager
     {
         if(!host?.trim())
             throw new InvalidOperationException("Host cannot be null or empty.");
@@ -42,7 +53,11 @@ export default class MySQLDBManager extends AbstractManager
         if(max <= 0)
             throw new InvalidOperationException("Maximum pool size must be greater than zero.");        
 
-        return new MySQLDBManager(new MySQLDBConnection(host, port, database, user, pass, usePool, max));
+        const manager = new MySQLDBManager(new MySQLDBConnection(host, port, database, user, pass, usePool, max));
+
+        manager._autoCommit = autocommit;
+
+        return manager;
     }
 
     public static BuildFromEnviroment(): MySQLDBManager
@@ -60,7 +75,8 @@ export default class MySQLDBManager extends AbstractManager
                 "DB_PORT environment variable is not a valid integer."
             );
 
-        let usePool: boolean | undefined;       
+        let useAutoCommit: boolean | undefined = true;
+        let usePool: boolean | undefined = true;   
         let maxPool: number | undefined;
 
         if(process.env.DB_USE_POOL)
@@ -75,6 +91,17 @@ export default class MySQLDBManager extends AbstractManager
             usePool = value == "true";
         }
 
+        if (process.env.DB_AUTO_COMMIT)
+        {
+            const value = process.env.DB_AUTO_COMMIT.trim().toLowerCase();
+
+            if (value != "true" && value != "false")
+                throw new InvalidOperationException(
+                    "DB_AUTO_COMMIT environment variable must be 'true' or 'false'."
+                );
+
+            useAutoCommit = value == "true";
+        }
 
         if(process.env.DB_MAX_POOL_SIZE)
         {
@@ -86,7 +113,7 @@ export default class MySQLDBManager extends AbstractManager
                 );
         }
 
-        return MySQLDBManager.Build(host, intPort, database, user, pass, usePool, maxPool);
+        return MySQLDBManager.Build(host, intPort, database, user, pass, usePool, maxPool, useAutoCommit);
     }
     
     public static async CloseAllPoolAsync() : Promise<void>

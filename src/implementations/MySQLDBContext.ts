@@ -125,6 +125,23 @@ export default abstract class MySQLDBContext extends AbstractContext
          await this._manager.SavePointAsync(savepoint);
     }
 
+    public async SaveChangesAsync()
+    {
+        if (this._manager.AutoCommit)
+            throw new InvalidOperationException(`Can not call ${MySQLDBContext.name}.${this.SaveChangesAsync.name} while auto-commit mode is enabled.`);
+
+        if (!this._manager.AutoCommit && this._manager.InTransactionMode)
+            await this._manager.CommitAsync();
+    }
+
+    public async DiscartChangesAsync()
+    {
+        if (this._manager.AutoCommit)
+            throw new InvalidOperationException(`Cannot call ${MySQLDBContext.name}.${this.DiscartChangesAsync.name} while auto-commit mode is enabled.`);
+
+        if (!this._manager.AutoCommit && this._manager.InTransactionMode)
+            await this._manager.RollBackAsync();
+    }
 
     public async CommitAsync() : Promise<any>
     {           

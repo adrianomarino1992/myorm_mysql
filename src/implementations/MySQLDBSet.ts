@@ -49,6 +49,13 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     }
        
 
+    private async BeginTransactionIfNotInAutoCommitMode()
+    {
+        if (!this._manager.AutoCommit && !this._manager.InTransactionMode)
+            await this._manager.BeginTransactionAsync();
+    }
+
+
     public async AddObjectAndRelationsAsync(obj: T, relations: (keyof T)[]): Promise<T> {
         return this.AddObjectAsync(obj, false, relations);
     }
@@ -158,6 +165,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
             values = values.substring(0, values.length - 1) + ")";
 
             let insert = `${sql} ${values} ${returnKey};`;
+
+            await this.BeginTransactionIfNotInAutoCommitMode();
             
             let insertResult = await this._manager.ExecuteAsync(insert);
             
@@ -525,6 +534,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
             if(!PK)
                 throw new InvalidOperationException(`The type ${this._type.name} must have a primary key field`);
 
+            await this.BeginTransactionIfNotInAutoCommitMode();
+
             let pkColumn = Type.GetColumnNameAndType(this._type).filter(s => s.Field == PK)[0];
 
             for(let map of this._maps)
@@ -706,9 +717,9 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
 
             update += " " + whereSrt;                 
 
-            await this._manager.ExecuteNonQueryAsync(update);
+            const result = await this._manager.ExecuteAsync(update);
 
-            return 1;
+            return result.affectedRows;
         });
         
         
@@ -773,6 +784,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                     })
                 });
             }
+
+            await this.BeginTransactionIfNotInAutoCommitMode();
 
             let update = `update \`${this._table}\` set`;
             let values = "";
@@ -1309,9 +1322,11 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
                 query += whereSrt;
             }              
 
-            await this._manager.ExecuteNonQueryAsync(query);
+            await this.BeginTransactionIfNotInAutoCommitMode();
 
-            return 1;
+            const result = await this._manager.ExecuteAsync(query);
+
+            return result.affectedRows;
 
         });
     }
@@ -1350,6 +1365,8 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
             {
                 del += ` ${where.StatementType} ${this.EvaluateStatement(where)} `;
             }  
+
+            await this.BeginTransactionIfNotInAutoCommitMode();
 
             await this._manager.ExecuteNonQueryAsync(del);
 

@@ -328,6 +328,7 @@ const context = new Context(MySQLDBManager.Build("localhost", 5432, "test_db", "
 | `DB_USER` | Yes | Database user | - |
 | `DB_PASS` | Yes | Database password | - |
 | `DB_USE_POOL` | No | Enables connection pooling (`true` or `false`) | `true` |
+| `DB_AUTO_COMMIT` | No | Enables auto-commit operations (`true` or `false`) | `true` |
 | `DB_MAX_POOL_SIZE` | No | Maximum number of pool connections | `10` |
 
 Example:

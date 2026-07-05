@@ -49,7 +49,7 @@
   "homepage": "https://github.com/adrianomarino1992/myorm_mysql#readme",
   "license": "ISC",
   "dependencies": {
-    "myorm_core": "^9.1.0",
+    "myorm_core": "^10.0.0",
     "mysql": "^2.18.1"
   },
   "peerDependencies": {
