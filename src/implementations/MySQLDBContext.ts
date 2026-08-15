@@ -18,7 +18,6 @@ export default abstract class MySQLDBContext extends AbstractContext
 {
     protected _manager:MySQLDBManager;    
 
-    private _inTransactionMode: boolean = false;
 
     private _mappedTypes! : {new (...args: any[]) : unknown}[];
 
@@ -111,7 +110,6 @@ export default abstract class MySQLDBContext extends AbstractContext
     public async BeginTransactionAsync() : Promise<void>
     {
         await this._manager.BeginTransactionAsync();
-        this._inTransactionMode = true;
     }
 
     public async SavePointAsync(savepoint : string) : Promise<void>
@@ -119,7 +117,7 @@ export default abstract class MySQLDBContext extends AbstractContext
         if(!savepoint || !savepoint.trim())
             throw new InvalidOperationException("The name of savepoint is required");
 
-        if(!this._inTransactionMode)
+        if(!this._manager.InTransactionMode)
             throw new InvalidOperationException(`Can not create a savepoint before start a transaction. Call the ${MySQLDBContext.name}.${this.BeginTransactionAsync.name} method before`);
 
          await this._manager.SavePointAsync(savepoint);
@@ -132,6 +130,7 @@ export default abstract class MySQLDBContext extends AbstractContext
 
         if (!this._manager.AutoCommit && this._manager.InTransactionMode)
             await this._manager.CommitAsync();
+
     }
 
     public async DiscartChangesAsync()
@@ -141,33 +140,27 @@ export default abstract class MySQLDBContext extends AbstractContext
 
         if (!this._manager.AutoCommit && this._manager.InTransactionMode)
             await this._manager.RollBackAsync();
+
     }
 
     public async CommitAsync() : Promise<any>
     {           
-        if(!this._inTransactionMode)
+        if(!this._manager.InTransactionMode)
             throw new InvalidOperationException(`Can not do a commit before start a transaction. Call the ${MySQLDBContext.name}.${this.BeginTransactionAsync.name} method before`);
 
         await this._manager.CommitAsync();
-        this._inTransactionMode = false;
     }
 
 
     public async RollBackAsync(toSavePoint?: string) : Promise<any>
     {
-        if(!this._inTransactionMode)
+        if(!this._manager.InTransactionMode)
             throw new InvalidOperationException(`Can not do a rollback before start a transaction. Call the ${MySQLDBContext.name}.${this.BeginTransactionAsync.name} method before`);
 
-       await this._manager.RollBackAsync(toSavePoint);
-        
-        if(!toSavePoint)
-            this._inTransactionMode = false;
-    } 
-          
-    
+        await this._manager.RollBackAsync(toSavePoint);
+    }
 
 }
-
 interface IJoinMap{JoiningTable : Function, Type: Join, Left : Function, LeftKey : string, Right : Function, RightKey : string};
 
 export class Joining implements IJoining
@@ -647,3 +640,5 @@ enum Join
     INNER = 1, 
     LEFT = 2,
 } 
+
+

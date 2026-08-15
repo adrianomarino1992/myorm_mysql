@@ -14,7 +14,54 @@ afterAll(async () =>
 
 
 
+
 describe("Transactions", () => {
+
+    test("Should not allow manual transaction when auto commit is off", async () => {
+
+         const context = CreateContext();
+         context["_manager"]["_autoCommit"] = false;
+
+         await expect(context.BeginTransactionAsync()).rejects.toThrow("auto-commit mode is disabled");
+    }, 100000);
+
+    test("Should keep manual transaction open after query error in auto commit mode", async () => {
+
+         await TruncateTablesAsync();
+         const context = CreateContext();
+
+         await context.BeginTransactionAsync();
+         await context.Persons.AddAsync(new Person("Before error", "before-error@test.com"));
+
+         await expect(context.ExecuteNonQuery("select * from table_that_does_not_exist;")).rejects.toBeDefined();
+
+         await context.RollBackAsync();
+
+         const persons = await context.Persons.ToListAsync();
+
+         expect(persons.length).toBe(0);
+
+    }, 100000);
+
+    test("Should recover context after transaction error in auto commit off mode", async () => {
+
+         await TruncateTablesAsync();
+         const context = CreateContext();
+         context["_manager"]["_autoCommit"] = false;
+
+         await context.Persons.AddAsync(new Person("Before error", "before-error@test.com"));
+
+         await expect(context.ExecuteNonQuery("select * from table_that_does_not_exist;")).rejects.toBeDefined();
+
+         await context.Persons.AddAsync(new Person("After error", "after-error@test.com"));
+         await context.SaveChangesAsync();
+
+         const persons = await context.Persons.ToListAsync();
+
+         expect(persons.length).toBe(1);
+         expect(persons[0].Email).toBe("after-error@test.com");
+
+    }, 100000);
 
     test("Should save all entities", async () => {
 
@@ -128,4 +175,6 @@ describe("Transactions", () => {
     }, 100000 );
 
 
-});5
+});
+
+

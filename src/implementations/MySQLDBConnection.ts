@@ -20,7 +20,6 @@ export default class MySQLDBConnection extends AbstractConnection
     private _conn! : mysql.Connection | mysql.PoolConnection;
     private _originalDatabase! : string; 
     private _originalUsePoolMode! : boolean; 
-    private _inTransactionMode : boolean = false;
    
 
     constructor(host : string, port : number, dabatase : string, user : string, pass : string, usePool : boolean = true, max: number = 10)
@@ -151,7 +150,6 @@ export default class MySQLDBConnection extends AbstractConnection
             try
             { 
                 await this._conn.query("START TRANSACTION")
-                this._inTransactionMode = true;
                 resolve();
                 
             }catch(err)
@@ -172,9 +170,6 @@ export default class MySQLDBConnection extends AbstractConnection
                  if(!savepoint || !savepoint.trim())
                    return reject( new InvalidOperationException("The name of savepoint is required"));        
 
-                if(!this._inTransactionMode)
-                    return reject(new InvalidOperationException(`Can not create a savepoint before start a transaction. Call the ${MySQLDBConnection.name}.${this.BeginTransactionAsync.name} method before`));
-
                 await this._conn.query(`SAVEPOINT ${savepoint.toLowerCase()}`)
 
                 resolve();
@@ -193,11 +188,7 @@ export default class MySQLDBConnection extends AbstractConnection
         {
             try
             {         
-                 if(!this._inTransactionMode)
-                    return reject(new InvalidOperationException(`Can not do a commit before start a transaction. Call the ${MySQLDBConnection.name}.${this.BeginTransactionAsync.name} method before`));
-                
                 await this._conn.query("COMMIT")
-                this._inTransactionMode = false;
 
                 resolve();
                 
@@ -214,16 +205,11 @@ export default class MySQLDBConnection extends AbstractConnection
         {
             try
             {
-                if(!this._inTransactionMode)
-                   return reject( new InvalidOperationException(`Can not do a rollback before start a transaction. Call the ${MySQLDBConnection.name}.${this.BeginTransactionAsync.name} method before`));
-
                 let query = toSavePoint && toSavePoint.trim() ? `ROLLBACK TO SAVEPOINT ${toSavePoint}` : "ROLLBACK";
                 await this._conn.query(query)
                 resolve();
 
-                if(!toSavePoint || !toSavePoint.trim())
-                    this._inTransactionMode = false;
-                
+
             }catch(err)
             {
                 reject(new QueryFailException((err as Error).message, (toSavePoint && toSavePoint.trim() ? `ROLLBACK TO SAVEPOINT ${toSavePoint}` : "ROLLBACK")));
@@ -258,7 +244,7 @@ export default class MySQLDBConnection extends AbstractConnection
         
     }
 
-    public CloseAsync()
+    public CloseAsync(discardFromPool: boolean = false)
     {
         return new Promise<void>(async (resolve, reject) => 
         {
@@ -269,7 +255,9 @@ export default class MySQLDBConnection extends AbstractConnection
 
                 if(!this.InPoolMode)
                     await this._conn.end();
-                else                
+                else if(discardFromPool)
+                    (this._conn as mysql.PoolConnection).destroy();
+                else
                     (this._conn as mysql.PoolConnection).release();
                 
                 this.DataBaseName = this._originalDatabase;
@@ -336,3 +324,4 @@ export default class MySQLDBConnection extends AbstractConnection
         });  
     }
 }
+

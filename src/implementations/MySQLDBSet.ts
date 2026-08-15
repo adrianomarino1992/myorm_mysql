@@ -52,7 +52,7 @@ export default class MySQLDBSet<T extends Object>  extends AbstractSet<T>
     private async BeginTransactionIfNotInAutoCommitMode()
     {
         if (!this._manager.AutoCommit && !this._manager.InTransactionMode)
-            await this._manager.BeginTransactionAsync();
+            await this._manager.BeginManagedTransactionAsync();
     }
 
 
@@ -2472,4 +2472,5 @@ enum StatementType
     OR = "or", 
     AND = "and"
 }
+
 

@@ -16,6 +16,7 @@ export default class MySQLDBManager extends AbstractManager
     private _logger? : DBOperationLogHandler;
     private _inTransactionMode : boolean = false;
     private _autoCommit: boolean = true;
+    private _manualTransactionMode: boolean = false;
 
     public get AutoCommit(): boolean
     {
@@ -422,9 +423,21 @@ export default class MySQLDBManager extends AbstractManager
     
     public async BeginTransactionAsync() : Promise<void>
     {
+        if (!this._autoCommit)
+            throw new InvalidOperationException(`Can not start a manual transaction while auto-commit mode is disabled.`);
+
         await this.OpenConnectionIfNeedAsync();
         await this._connection.BeginTransactionAsync();
         this._inTransactionMode = true;
+        this._manualTransactionMode = true;
+    }
+
+    public async BeginManagedTransactionAsync() : Promise<void>
+    {
+        await this.OpenConnectionIfNeedAsync();
+        await this._connection.BeginTransactionAsync();
+        this._inTransactionMode = true;
+        this._manualTransactionMode = false;
     }
 
     public async SavePointAsync(savepoint : string) : Promise<void>
@@ -446,6 +459,7 @@ export default class MySQLDBManager extends AbstractManager
 
         await this._connection.CommitAsync();
         this._inTransactionMode = false;
+        this._manualTransactionMode = false;
     }
 
     public async RollBackAsync(toSavePoint?: string) : Promise<any>
@@ -456,7 +470,10 @@ export default class MySQLDBManager extends AbstractManager
         await this._connection.RollBackAsync(toSavePoint);
         
         if(!toSavePoint)
+        {
             this._inTransactionMode = false;
+            this._manualTransactionMode = false;
+        }
     } 
 
     private async OpenConnectionIfNeedAsync() : Promise<void>
@@ -467,12 +484,12 @@ export default class MySQLDBManager extends AbstractManager
         await this._connection.OpenAsync();
     }
 
-    private async CloseConnectionIfNeedAsync() : Promise<void>
+    private async CloseConnectionIfNeedAsync(discardFromPool: boolean = false) : Promise<void>
     {
-        if(this._inTransactionMode && this._connection && this._connection.IsOpen)
+        if(!discardFromPool && this._inTransactionMode && this._connection && this._connection.IsOpen)
             return;
 
-        await this._connection.CloseAsync();
+        await this._connection.CloseAsync(discardFromPool);
     }
 
     public async ExecuteNonQueryAsync(query: string): Promise<void> {
@@ -509,6 +526,7 @@ export default class MySQLDBManager extends AbstractManager
 
             let success = true;
             let result : any;
+            let discardConnection = false;
             try
             {                
                 result = await func();
@@ -517,10 +535,11 @@ export default class MySQLDBManager extends AbstractManager
             {
                 success = false;
                 result = err;
+                discardConnection = await this.RollbackTransactionOnFailureAsync();
             }
             finally
             {
-                await this.CloseConnectionIfNeedAsync();
+                await this.CloseConnectionIfNeedAsync(discardConnection);
                 
                 if(success)
                     resolve(result);
@@ -528,6 +547,27 @@ export default class MySQLDBManager extends AbstractManager
                     reject(result);
             }
         });
+    }
+
+    private async RollbackTransactionOnFailureAsync(): Promise<boolean>
+    {
+        if (this._autoCommit || this._manualTransactionMode)
+            return false;
+
+        if (!this._inTransactionMode || !this._connection?.IsOpen)
+            return false;
+
+        try
+        {
+            await this._connection.RollBackAsync();
+            this._inTransactionMode = false;
+            return false;
+        }
+        catch
+        {
+            this._inTransactionMode = false;
+            return true;
+        }
     }
 
     
@@ -571,3 +611,5 @@ export default class MySQLDBManager extends AbstractManager
     }
 
 }
+
+
