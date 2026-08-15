@@ -43,6 +43,29 @@ describe("Transactions", () => {
 
     }, 100000);
 
+    test("Should recover manual transaction using savepoint after query error in auto commit mode", async () => {
+
+         await TruncateTablesAsync();
+         const context = CreateContext();
+
+         await context.BeginTransactionAsync();
+         await context.Persons.AddAsync(new Person("Before savepoint", "before-savepoint@test.com"));
+         await context.SavePointAsync("before_failure");
+
+         await expect(context.ExecuteNonQuery("select * from table_that_does_not_exist;")).rejects.toBeDefined();
+
+         await context.RollBackAsync("before_failure");
+         await context.Persons.AddAsync(new Person("After rollback", "after-rollback@test.com"));
+         await context.CommitAsync();
+
+         const persons = await context.Persons.ToListAsync();
+
+         expect(persons.length).toBe(2);
+         expect(persons.some(p => p.Email == "before-savepoint@test.com")).toBeTruthy();
+         expect(persons.some(p => p.Email == "after-rollback@test.com")).toBeTruthy();
+
+    }, 100000);
+
     test("Should recover context after transaction error in auto commit off mode", async () => {
 
          await TruncateTablesAsync();
@@ -60,6 +83,24 @@ describe("Transactions", () => {
 
          expect(persons.length).toBe(1);
          expect(persons[0].Email).toBe("after-error@test.com");
+
+    }, 100000);
+
+    test("Should discard implicit transaction after query error in auto commit off mode", async () => {
+
+         await TruncateTablesAsync();
+         const context = CreateContext();
+         context["_manager"]["_autoCommit"] = false;
+
+         await context.Persons.AddAsync(new Person("Before error", "before-error@test.com"));
+
+         await expect(context.ExecuteNonQuery("select * from table_that_does_not_exist;")).rejects.toBeDefined();
+
+         await context.DiscartChangesAsync();
+
+         const persons = await context.Persons.ToListAsync();
+
+         expect(persons.length).toBe(0);
 
     }, 100000);
 
