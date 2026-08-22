@@ -42,6 +42,11 @@ export default class MySQLDBConnection extends AbstractConnection
         return `${this.DataBaseName}${this.HostName}${this.Port}${this.UserName}`;
     }
 
+    public GetPoolIdentifier(): string
+    {
+        return this.GetConnectionIdentifier();
+    }
+
     public static async CloseAllPoolsAsync()
     {
         for(let key in MySQLDBConnection._pools)
@@ -74,6 +79,26 @@ export default class MySQLDBConnection extends AbstractConnection
         }
 
        
+    }
+
+    public static GetPoolStatus(key: string): { totalCount: number; idleCount: number; waitingCount: number; } | undefined
+    {
+        const pool = MySQLDBConnection._pools[key];
+
+        if (!pool)
+            return undefined;
+
+        const internalPool = pool as unknown as {
+            _allConnections: unknown[];
+            _freeConnections: unknown[];
+            _connectionQueue: unknown[];
+        };
+
+        return {
+            totalCount: internalPool._allConnections.length,
+            idleCount: internalPool._freeConnections.length,
+            waitingCount: internalPool._connectionQueue.length
+        };
     }
 
     public AsMySQL() : MySQLDBConnection

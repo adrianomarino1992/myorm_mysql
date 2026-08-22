@@ -32,6 +32,11 @@ export default abstract class MySQLDBContext extends AbstractContext
     {
         await MySQLDBConnection.CloseAllPoolsAsync();
     }
+
+    public GetPoolStatus(): { totalCount: number; idleCount: number; waitingCount: number; } | undefined
+    {
+        return this._manager.GetPoolStatus();
+    }
     
 
     public SetLogger(logger: DBOperationLogHandler): void {

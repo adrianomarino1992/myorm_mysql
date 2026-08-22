@@ -87,6 +87,38 @@ describe("SaveChangesAsync and DiscartChangesAsync", () =>
 
     }, 500000);
 
+    test("Should release pooled connection after SaveChangesAsync", async () =>
+    {
+        await TruncatePersonTableAsync();
+        const context = CreateContext();
+        context["_manager"]["_autoCommit"] = false;
+
+        await context.Persons.AddAsync(new Person("save-release", "save-release@test.com"));
+        await context.SaveChangesAsync();
+
+        const poolStatus = context.GetPoolStatus();
+
+        expect(poolStatus).toBeDefined();
+        expect(poolStatus!.waitingCount).toBe(0);
+        expect(poolStatus!.totalCount).toBe(poolStatus!.idleCount);
+    }, 500000);
+
+    test("Should release pooled connection after DiscartChangesAsync", async () =>
+    {
+        await TruncatePersonTableAsync();
+        const context = CreateContext();
+        context["_manager"]["_autoCommit"] = false;
+
+        await context.Persons.AddAsync(new Person("discard-release", "discard-release@test.com"));
+        await context.DiscartChangesAsync();
+
+        const poolStatus = context.GetPoolStatus();
+
+        expect(poolStatus).toBeDefined();
+        expect(poolStatus!.waitingCount).toBe(0);
+        expect(poolStatus!.totalCount).toBe(poolStatus!.idleCount);
+    }, 500000);
+
     test("Should save changes of UpdateAsync", async () =>
     {
         const context = await CompleteSeedAsync();

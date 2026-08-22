@@ -121,6 +121,11 @@ export default class MySQLDBManager extends AbstractManager
     {
         await MySQLDBConnection.CloseAllPoolsAsync();
     }
+
+    public GetPoolStatus(): { totalCount: number; idleCount: number; waitingCount: number; } | undefined
+    {
+        return MySQLDBConnection.GetPoolStatus(this._connection.GetPoolIdentifier());
+    }
         
 
     public async CheckConnectionAsync(): Promise<boolean> {
@@ -457,9 +462,16 @@ export default class MySQLDBManager extends AbstractManager
         if(!this._inTransactionMode)
             throw new InvalidOperationException(`Can not do a commit before start a transaction. Call the ${MySQLDBManager.name}.${this.BeginTransactionAsync.name} method before`);
 
-        await this._connection.CommitAsync();
-        this._inTransactionMode = false;
-        this._manualTransactionMode = false;
+        try
+        {
+            await this._connection.CommitAsync();
+        }
+        finally
+        {
+            this._inTransactionMode = false;
+            this._manualTransactionMode = false;
+            await this.CloseConnectionIfNeedAsync();
+        }
     }
 
     public async RollBackAsync(toSavePoint?: string) : Promise<any>
@@ -473,6 +485,7 @@ export default class MySQLDBManager extends AbstractManager
         {
             this._inTransactionMode = false;
             this._manualTransactionMode = false;
+            await this.CloseConnectionIfNeedAsync();
         }
     } 
 

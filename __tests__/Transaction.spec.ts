@@ -86,6 +86,40 @@ describe("Transactions", () => {
 
     }, 100000);
 
+    test("Should release pooled connection after manual commit", async () => {
+
+         await TruncateTablesAsync();
+         const context = CreateContext();
+
+         await context.BeginTransactionAsync();
+         await context.Persons.AddAsync(new Person("Manual commit", "manual-commit@test.com"));
+         await context.CommitAsync();
+
+         const poolStatus = context.GetPoolStatus();
+
+         expect(poolStatus).toBeDefined();
+         expect(poolStatus!.waitingCount).toBe(0);
+         expect(poolStatus!.totalCount).toBe(poolStatus!.idleCount);
+
+    }, 100000);
+
+    test("Should release pooled connection after manual rollback", async () => {
+
+         await TruncateTablesAsync();
+         const context = CreateContext();
+
+         await context.BeginTransactionAsync();
+         await context.Persons.AddAsync(new Person("Manual rollback", "manual-rollback@test.com"));
+         await context.RollBackAsync();
+
+         const poolStatus = context.GetPoolStatus();
+
+         expect(poolStatus).toBeDefined();
+         expect(poolStatus!.waitingCount).toBe(0);
+         expect(poolStatus!.totalCount).toBe(poolStatus!.idleCount);
+
+    }, 100000);
+
     test("Should discard implicit transaction after query error in auto commit off mode", async () => {
 
          await TruncateTablesAsync();
